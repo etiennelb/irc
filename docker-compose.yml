@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+# TODO pouvoir définir les UID et GID pour bitlbee
+  bitlbee:
+    image: ezkrg/bitlbee-libpurple
+    container_name: bitlbee
+    expose:
+      - 6667
+    volumes:
+      - ./config/bitlbee:/var/lib/bitlbee:rw
+
+  weechat:
+    image: jkaberg/weechat
+    container_name: weechat
+    # FIXME restart: always
+    stdin_open: true
+    tty: true
+    expose:
+      - 9001
+    ports:
+    - 9001:9001
+    volumes:
+      - ~/.weechat:/weechat/.weechat
+    environment:
+      - 'UID=1000'
+      - 'GID=1000'
+
+# 1025
+# /server <znc_server_ip> 1025 etienne:<pass>
+  znc:
+    image: znc
+    container_name: znc
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Paris
+    expose:
+      - 1025
+    ports:
+      - 1025:1025
+    volumes:
+      - ~/.config/znc:/znc-data
+
+  glowingbear:
+    build:
+      context: .
+      dockerfile: GlowingBear.Dockerfile
+    ports:
+    - 9000:80
+
+
+  # garde les images à jour
+  # https://containrrr.github.io/watchtower/arguments/
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    #command: --schedule "0 0 3 * * ?"
+    command: --interval 10 --monitor-only
+
+# TODO monter un réseau
